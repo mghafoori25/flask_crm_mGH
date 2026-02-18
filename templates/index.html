@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+  <section class="card">
+    <h2>Kunden</h2>
+    <form method="get" class="row">
+      <input name="q" value="{{ q }}" placeholder="Name/E-Mail/Telefon ...">
+      <button>Suchen</button>
+    </form>
+
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>E-Mail</th><th></th></tr></thead>
+      <tbody>
+      {% for c in customers.items %}
+        <tr>
+          <td>{{ c.id }}</td>
+          <td>{{ c.full_name() }}</td>
+          <td>{{ c.email or "" }}</td>
+          <td><a href="{{ url_for('main.customer_detail', customer_id=c.id) }}">Details</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="pager">
+      {% if customers.has_prev %}
+        <a href="{{ url_for('main.index', q=q, customers_page=customers.prev_num, q_order=q_order, orders_page=orders.number, channel=channel, contacts_page=contacts.number) }}">←</a>
+      {% endif %}
+      <span>Seite {{ customers.page }} / {{ customers.pages or 1 }}</span>
+      {% if customers.has_next %}
+        <a href="{{ url_for('main.index', q=q, customers_page=customers.next_num, q_order=q_order, orders_page=orders.number, channel=channel, contacts_page=contacts.number) }}">→</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Bestellungen (global)</h2>
+    <form method="get" class="row">
+      <input type="hidden" name="q" value="{{ q }}">
+      <input type="hidden" name="customers_page" value="{{ customers.page }}">
+      <input name="q_order" value="{{ q_order }}" placeholder="Bestellnr./Kunde ...">
+      <button>Suchen</button>
+    </form>
+
+    <table>
+      <thead><tr><th>#</th><th>Kunde</th><th>Datum</th><th>Status</th><th>Summe</th></tr></thead>
+      <tbody>
+      {% for o in orders.items %}
+        <tr>
+          <td>{{ o.id }}</td>
+          <td>{{ o.customer.full_name() }}</td>
+          <td>{{ o.order_date.strftime("%Y-%m-%d") }}</td>
+          <td>{{ o.status }}</td>
+          <td>{{ "%.2f"|format(o.total_amount) }} €</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="pager">
+      {% if orders.has_prev %}
+        <a href="{{ url_for('main.index', q=q, customers_page=customers.page, q_order=q_order, orders_page=orders.prev_num, channel=channel, contacts_page=contacts.number) }}">←</a>
+      {% endif %}
+      <span>Seite {{ orders.page }} / {{ orders.pages or 1 }}</span>
+      {% if orders.has_next %}
+        <a href="{{ url_for('main.index', q=q, customers_page=customers.page, q_order=q_order, orders_page=orders.next_num, channel=channel, contacts_page=contacts.number) }}">→</a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Kontakte (global)</h2>
+  <form method="get" class="row">
+    <input type="hidden" name="q" value="{{ q }}">
+    <input type="hidden" name="customers_page" value="{{ customers.page }}">
+    <input type="hidden" name="q_order" value="{{ q_order }}">
+    <input type="hidden" name="orders_page" value="{{ orders.page }}">
+
+    <label>Kanal:
+      <select name="channel" onchange="this.form.submit()">
+        <option value="">Alle</option>
+        {% for ch in channels %}
+          <option value="{{ ch }}" {% if channel==ch %}selected{% endif %}>{{ ch }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+
+  <table>
+    <thead><tr><th>Datum</th><th>Kunde</th><th>Art</th><th>Betreff</th><th>Erfasser</th></tr></thead>
+    <tbody>
+    {% for ct in contacts.items %}
+      <tr>
+        <td>{{ ct.contact_time.strftime("%Y-%m-%d %H:%M") }}</td>
+        <td>{{ ct.customer.full_name() }}</td>
+        <td>{{ ct.channel }}</td>
+        <td>{{ ct.subject or "" }}</td>
+        <td>{{ ct.user.name if ct.user else "" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pager">
+    {% if contacts.has_prev %}
+      <a href="{{ url_for('main.index', q=q, customers_page=customers.page, q_order=q_order, orders_page=orders.page, channel=channel, contacts_page=contacts.prev_num) }}">←</a>
+    {% endif %}
+    <span>Seite {{ contacts.page }} / {{ contacts.pages or 1 }}</span>
+    {% if contacts.has_next %}
+      <a href="{{ url_for('main.index', q=q, customers_page=customers.page, q_order=q_order, orders_page=orders.page, channel=channel, contacts_page=contacts.next_num) }}">→</a>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

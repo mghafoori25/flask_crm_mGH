@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h2>Login</h2>
+
+  <form method="post" class="col">
+    <input name="email" placeholder="E-Mail" required>
+    <input name="password" type="password" placeholder="Passwort" required>
+    <button type="submit">Einloggen</button>
+  </form>
+
+  <p class="hint">Demo: chef@example.com / chef123</p>
+  <p class="hint">Demo: emp@example.com / emp123 </p>
+</section>
+{% endblock %}

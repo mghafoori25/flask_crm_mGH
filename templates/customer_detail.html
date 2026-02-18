@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="card">
+  <h2>{{ customer.full_name() }} (Kund# {{ customer.id }})</h2>
+  <p>{{ customer.email or "" }} {{ customer.phone or "" }}</p>
+
+  <div class="kpis">
+    <div><b>Umsatz gesamt:</b> {{ "%.2f"|format(total_revenue) }} €</div>
+    <div><b>Umsatz letztes Jahr:</b> {{ "%.2f"|format(revenue_last_year) }} €</div>
+  </div>
+
+  <form method="get" class="row">
+    <label>Von <input type="date" name="from" value="{{ from_str }}"></label>
+    <label>Bis <input type="date" name="to" value="{{ to_str }}"></label>
+    <button>Anwenden</button>
+    <a class="btn" href="{{ url_for('main.customer_detail', customer_id=customer.id) }}">Reset</a>
+  </form>
+
+  {% if period_error %}
+    <p class="error">{{ period_error }}</p>
+  {% endif %}
+
+  {% if period_revenue is not none %}
+    <p><b>Umsatz im Zeitraum:</b> {{ "%.2f"|format(period_revenue) }} €</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>Letzte Bestellungen</h3>
+  <table>
+    <thead><tr><th>#</th><th>Datum</th><th>Status</th><th>Summe</th></tr></thead>
+    <tbody>
+    {% for o in last_orders %}
+      <tr>
+        <td>{{ o.id }}</td>
+        <td>{{ o.order_date.strftime("%Y-%m-%d") }}</td>
+        <td>{{ o.status }}</td>
+        <td>{{ "%.2f"|format(o.total_amount) }} €</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h3>Letzte Kontakte</h3>
+
+  <form method="post" action="{{ url_for('main.add_contact', customer_id=customer.id) }}" class="row wrap">
+    <select name="channel" required>
+      {% for ch in channels %}
+        <option value="{{ ch }}">{{ ch }}</option>
+      {% endfor %}
+    </select>
+    <input name="subject" placeholder="Betreff (optional)">
+    <input name="notes" placeholder="Notizen (optional)">
+    <button type="submit">Kontakt speichern</button>
+  </form>
+
+  <ul class="timeline">
+    {% for ct in last_contacts %}
+      <li>
+        <b>{{ ct.contact_time.strftime("%Y-%m-%d %H:%M") }}</b>
+        – <b>{{ ct.channel }}</b>: {{ ct.subject or "" }}
+        <span class="muted">(Erfasser: {{ ct.user.name if ct.user else "" }})</span>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if current_user.role == "CHEF" %}
+    <a class="btn" href="{{ url_for('main.export_customer_orders_csv', customer_id=customer.id) }}">CSV Export (Chef)</a>
+  {% endif %}
+</section>
+
+{% endblock %}
