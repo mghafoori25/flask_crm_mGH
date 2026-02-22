@@ -114,4 +114,10 @@
   </div>
 </section>
 
+{% if current_user.role == "CHEF" %}
+    <a class="btn btn-secondary" href="{{ url_for('main.import_customers') }}">
+        CSV Import
+    </a>
+{% endif %}
+
 {% endblock %}
