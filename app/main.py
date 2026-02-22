@@ -1,9 +1,11 @@
 import csv
+import io
 from io import StringIO
 from datetime import datetime, date
 from sqlalchemy import func, or_
 from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
 from flask_login import login_required, current_user
+
 
 from app import db
 from app.models import Customer, Order, Contact
@@ -218,3 +220,58 @@ def monthly_dashboard():
         .all()
     )
     return render_template("index.html", monthly_rows=rows)  # optional Anzeige, du kannst später extra Template machen
+
+@app.route("/admin/customers/import", methods=["GET", "POST"])
+@login_required
+def import_customers():
+
+    if current_user.role != "CHEF":
+        flash("Nur CHEF darf CSV importieren.")
+        return redirect(url_for("index"))
+
+    result = None
+
+    if request.method == "POST":
+        file = request.files.get("file")
+
+        if not file:
+            flash("Keine Datei hochgeladen.")
+            return redirect(request.url)
+
+        update_existing = bool(request.form.get("update_existing"))
+
+        result = {
+            "imported": 0,
+            "updated": 0,
+            "skipped": 0,
+            "errors": []
+        }
+
+        stream = io.StringIO(file.stream.read().decode("utf-8"))
+        reader = csv.DictReader(stream)
+
+        for row in reader:
+            name = row.get("name")
+            email = row.get("email")
+
+            if not name or not email:
+                result["skipped"] += 1
+                continue
+
+            existing = Customer.query.filter_by(email=email).first()
+
+            if existing:
+                if update_existing:
+                    existing.name = name
+                    result["updated"] += 1
+                else:
+                    result["skipped"] += 1
+            else:
+                new_customer = Customer(name=name, email=email)
+                db.session.add(new_customer)
+                result["imported"] += 1
+
+        db.session.commit()
+        flash("Import abgeschlossen.")
+
+    return render_template("import_customers.html", result=result)

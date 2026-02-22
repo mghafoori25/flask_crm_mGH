@@ -1,0 +1,17 @@
+<h2>Kunden CSV Import</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv" required>
+    <label>
+        <input type="checkbox" name="update_existing">
+        Bestehende Kunden aktualisieren
+    </label>
+    <button type="submit">Import starten</button>
+</form>
+
+{% if result %}
+    <hr>
+    <p>Importiert: {{ result.imported }}</p>
+    <p>Aktualisiert: {{ result.updated }}</p>
+    <p>Übersprungen: {{ result.skipped }}</p>
+{% endif %}

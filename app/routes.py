@@ -5,8 +5,6 @@ from app import db
 from app.models import Customer, Order, Contact
 from flask_login import login_required
 
-bp = Blueprint("main", __name__)
-
 @bp.route("/")
 @login_required
 def index():
