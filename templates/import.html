@@ -1,17 +1,116 @@
-<h2>Kunden CSV Import</h2>
+{% extends "base.html" %}
+{% block content %}
 
-<form method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" accept=".csv" required>
-    <label>
-        <input type="checkbox" name="update_existing">
-        Bestehende Kunden aktualisieren
-    </label>
-    <button type="submit">Import starten</button>
-</form>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h2 class="mb-0">CSV Import – Kunden</h2>
+    <div class="text-muted small">Nur CHEF • CSV UTF-8 • Trennzeichen „,“ oder „;“</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('main.index') }}">Zurück</a>
+</div>
+
+<div class="row g-3">
+  <!-- Upload Card -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Datei hochladen</h5>
+        <p class="text-muted small mb-3">
+          Pflichtspalten: <code>name</code>, <code>email</code> • Optional: <code>phone</code>
+        </p>
+
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">CSV-Datei</label>
+            <input class="form-control" type="file" name="file" accept=".csv" required>
+            <div class="form-text">Tipp: Export als UTF-8, damit Umlaute korrekt sind.</div>
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="update_existing" id="update_existing">
+            <label class="form-check-label" for="update_existing">
+              Bestehende Kunden (nach E-Mail) aktualisieren
+            </label>
+          </div>
+
+          <button class="btn btn-primary" type="submit">Import starten</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Example Card -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Beispiel CSV</h5>
+        <p class="text-muted small mb-2">So muss die erste Zeile (Header) heißen:</p>
+<pre class="bg-light p-3 rounded small mb-0">name,email,phone
+Max Mustermann,max@example.com,06641234567
+Erika Musterfrau,erika@example.com,</pre>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% if result %}
-    <hr>
-    <p>Importiert: {{ result.imported }}</p>
-    <p>Aktualisiert: {{ result.updated }}</p>
-    <p>Übersprungen: {{ result.skipped }}</p>
+  <div class="card shadow-sm mt-4">
+    <div class="card-body">
+      <h5 class="card-title">Ergebnis</h5>
+
+      <div class="row text-center g-2">
+        <div class="col-6 col-md-3">
+          <div class="p-2 bg-light rounded">
+            <div class="small text-muted">Importiert</div>
+            <div class="h4 mb-0">{{ result.imported }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="p-2 bg-light rounded">
+            <div class="small text-muted">Aktualisiert</div>
+            <div class="h4 mb-0">{{ result.updated }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="p-2 bg-light rounded">
+            <div class="small text-muted">Übersprungen</div>
+            <div class="h4 mb-0">{{ result.skipped }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="p-2 bg-light rounded">
+            <div class="small text-muted">Fehler</div>
+            <div class="h4 mb-0">{{ result.errors|length if result.errors is defined else 0 }}</div>
+          </div>
+        </div>
+      </div>
+
+      {% if result.errors is defined and result.errors %}
+        <hr>
+        <h6 class="mb-2">Fehlerdetails</h6>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Zeile</th><th>Feld</th><th>Problem</th><th>Wert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in result.errors %}
+              <tr>
+                <td>{{ e.row }}</td>
+                <td><code>{{ e.field }}</code></td>
+                <td>{{ e.message }}</td>
+                <td class="text-muted"><code>{{ e.value }}</code></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
 {% endif %}
+
+{% endblock %}
