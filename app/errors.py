@@ -1,40 +1,19 @@
-import os
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from config import Config
+"""
+Custom error handlers (404, 500).
+"""
 
-db = SQLAlchemy()
+from flask import render_template
+from app import db
 
-login_manager = LoginManager()
-login_manager.login_view = "auth.login"
 
-def create_app(config_class=Config):
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+def register_error_handlers(app) -> None:
+    """Register custom error pages."""
+    @app.errorhandler(404)
+    def not_found(_error):
+        return render_template("404.html"), 404
 
-    app = Flask(
-        __name__,
-        template_folder=os.path.join(base_dir, "templates"),
-        static_folder=os.path.join(base_dir, "static"),
-    )
-    app.config.from_object(config_class)
-
-    db.init_app(app)
-    login_manager.init_app(app)
-
-    from app.models import User  # noqa
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
-
-    from app.auth import auth
-    app.register_blueprint(auth)
-
-    from app.main import main
-    app.register_blueprint(main)
-    
-    from app.errors import register_error_handlers
-    register_error_handlers(app)
-    
-    return app
+    @app.errorhandler(500)
+    def internal_error(_error):
+        # rollback in case of broken db transaction
+        db.session.rollback()
+        return render_template("500.html"), 500
