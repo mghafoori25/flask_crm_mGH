@@ -6,11 +6,10 @@
     <h2 class="mb-0">CSV Import – Kunden</h2>
     <div class="text-muted small">Nur CHEF • CSV UTF-8 • Trennzeichen „,“ oder „;“</div>
   </div>
-  <a class="btn btn-outline-secondary" href="{{ url_for('main.index') }}">Zurück</a>
+  <a class="btn btn-sm btn-outline-secondary px-3" href="{{ url_for('main.index') }}">Zurück</a>
 </div>
 
 <div class="row g-3">
-  <!-- Upload Card -->
   <div class="col-lg-6">
     <div class="card shadow-sm">
       <div class="card-body">
@@ -22,7 +21,7 @@
         <form method="POST" enctype="multipart/form-data">
           <div class="mb-3">
             <label class="form-label">CSV-Datei</label>
-            <input class="form-control" type="file" name="file" accept=".csv" required>
+            <input class="form-control form-control-sm" type="file" name="file" accept=".csv" required>
             <div class="form-text">Tipp: Export als UTF-8, damit Umlaute korrekt sind.</div>
           </div>
 
@@ -33,13 +32,12 @@
             </label>
           </div>
 
-          <button class="btn btn-primary" type="submit">Import starten</button>
+          <button class="btn btn-sm btn-primary px-3" type="submit">Import</button>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Example Card -->
   <div class="col-lg-6">
     <div class="card shadow-sm">
       <div class="card-body">
@@ -108,7 +106,6 @@ Erika Musterfrau,erika@example.com,</pre>
           </table>
         </div>
       {% endif %}
-
     </div>
   </div>
 {% endif %}

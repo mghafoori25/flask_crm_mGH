@@ -20,3 +20,19 @@ button,.btn{background:#111;color:#fff;border:none;cursor:pointer;text-decoratio
 .muted{opacity:.7}
 .pager{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
 @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+
+
+.btn-sm {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+
+.container {
+  max-width: 1100px;
+}
+
+
+.card {
+  border-radius: 12px;
+}
