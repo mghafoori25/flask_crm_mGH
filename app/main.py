@@ -221,57 +221,69 @@ def monthly_dashboard():
     )
     return render_template("index.html", monthly_rows=rows)  # optional Anzeige, du kannst später extra Template machen
 
-@app.route("/admin/customers/import", methods=["GET", "POST"])
+@main.route("/admin/customers/import", methods=["GET", "POST"])
 @login_required
+@role_required("CHEF")
 def import_customers():
-
-    if current_user.role != "CHEF":
-        flash("Nur CHEF darf CSV importieren.")
-        return redirect(url_for("index"))
-
     result = None
 
     if request.method == "POST":
         file = request.files.get("file")
-
-        if not file:
-            flash("Keine Datei hochgeladen.")
+        if not file or file.filename == "":
+            flash("Keine Datei hochgeladen.", "danger")
             return redirect(request.url)
 
         update_existing = bool(request.form.get("update_existing"))
 
-        result = {
-            "imported": 0,
-            "updated": 0,
-            "skipped": 0,
-            "errors": []
-        }
+        result = {"imported": 0, "updated": 0, "skipped": 0, "errors": []}
 
-        stream = io.StringIO(file.stream.read().decode("utf-8"))
-        reader = csv.DictReader(stream)
+        raw = file.read()
+        text = raw.decode("utf-8-sig", errors="replace")
+        delimiter = ";" if text.count(";") > text.count(",") else ","
 
-        for row in reader:
-            name = row.get("name")
-            email = row.get("email")
+        reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
 
-            if not name or not email:
+        if not reader.fieldnames:
+            flash("CSV hat keinen Header.", "danger")
+            return redirect(request.url)
+
+        header = {h.strip().lower() for h in reader.fieldnames if h}
+        if "name" not in header or "email" not in header:
+            flash("CSV muss Spalten 'name' und 'email' enthalten.", "danger")
+            return redirect(request.url)
+
+        for line_no, row in enumerate(reader, start=2):
+            row = {(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
+            name = row.get("name", "")
+            email = row.get("email", "").lower()
+
+            if not name:
+                result["errors"].append({"row": line_no, "field": "name", "message": "Pflichtfeld leer", "value": ""})
+                result["skipped"] += 1
+                continue
+            if not email or "@" not in email:
+                result["errors"].append({"row": line_no, "field": "email", "message": "Ungültige Email", "value": email})
                 result["skipped"] += 1
                 continue
 
             existing = Customer.query.filter_by(email=email).first()
-
             if existing:
                 if update_existing:
-                    existing.name = name
+                    # Bei dir heißen die Felder first_name/last_name/email/phone
+                    # -> wir speichern hier den gesamten name in first_name, last_name leer
+                    existing.first_name = name
+                    existing.last_name = existing.last_name or ""
                     result["updated"] += 1
                 else:
                     result["skipped"] += 1
-            else:
-                new_customer = Customer(name=name, email=email)
-                db.session.add(new_customer)
-                result["imported"] += 1
+                continue
+
+            # NEU: Customer braucht bei dir first_name, last_name, email, phone (siehe index() Filter)
+            new_customer = Customer(first_name=name, last_name="", email=email, phone=None)
+            db.session.add(new_customer)
+            result["imported"] += 1
 
         db.session.commit()
-        flash("Import abgeschlossen.")
+        flash("Import abgeschlossen.", "success")
 
     return render_template("import_customers.html", result=result)
