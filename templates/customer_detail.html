@@ -1,75 +1,185 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="card">
-  <h2>{{ customer.full_name() }} (Kund# {{ customer.id }})</h2>
-  <p>{{ customer.email or "" }} {{ customer.phone or "" }}</p>
+<!-- TOP: Kunde + KPIs + Datumsfilter -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
 
-  <div class="kpis">
-    <div><b>Umsatz gesamt:</b> {{ "%.2f"|format(total_revenue) }} €</div>
-    <div><b>Umsatz letztes Jahr:</b> {{ "%.2f"|format(revenue_last_year) }} €</div>
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+      <div>
+        <h3 class="mb-1">{{ customer.full_name() }} <span class="text-muted">(Kund# {{ customer.id }})</span></h3>
+        <div class="text-muted small">
+          {{ customer.email or "" }}{% if customer.phone %} • {{ customer.phone }}{% endif %}
+        </div>
+      </div>
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.index') }}">Zurück</a>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="row g-2 mb-3">
+      <div class="col-12 col-md-4">
+        <div class="p-3 bg-light rounded">
+          <div class="text-muted small">Umsatz gesamt</div>
+          <div class="h4 mb-0">{{ "%.2f"|format(total_revenue) }} €</div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="p-3 bg-light rounded">
+          <div class="text-muted small">Umsatz letztes Jahr</div>
+          <div class="h4 mb-0">{{ "%.2f"|format(revenue_last_year) }} €</div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="p-3 bg-light rounded">
+          <div class="text-muted small">Umsatz im Zeitraum</div>
+          <div class="h4 mb-0">
+            {% if period_revenue is not none %}
+              {{ "%.2f"|format(period_revenue) }} €
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label class="form-label small mb-1">Von</label>
+        <input class="form-control form-control-sm" type="date" name="from" value="{{ from_str }}">
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label small mb-1">Bis</label>
+        <input class="form-control form-control-sm" type="date" name="to" value="{{ to_str }}">
+      </div>
+
+      <div class="col-12 col-md-4 d-flex gap-2">
+        <button class="btn btn-sm btn-primary px-3" type="submit">Anwenden</button>
+        <a class="btn btn-sm btn-outline-secondary px-3"
+           href="{{ url_for('main.customer_detail', customer_id=customer.id) }}">
+          Reset
+        </a>
+      </div>
+
+      {% if period_error %}
+        <div class="col-12">
+          <div class="alert alert-warning py-2 mb-0">{{ period_error }}</div>
+        </div>
+      {% endif %}
+    </form>
+
   </div>
+</div>
 
-  <form method="get" class="row">
-    <label>Von <input type="date" name="from" value="{{ from_str }}"></label>
-    <label>Bis <input type="date" name="to" value="{{ to_str }}"></label>
-    <button>Anwenden</button>
-    <a class="btn" href="{{ url_for('main.customer_detail', customer_id=customer.id) }}">Reset</a>
-  </form>
+<!-- Letzte Bestellungen -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between">
+      <h5 class="card-title mb-0">Letzte Bestellungen</h5>
 
-  {% if period_error %}
-    <p class="error">{{ period_error }}</p>
-  {% endif %}
+      {% if current_user.role == "CHEF" %}
+        <a class="btn btn-sm btn-outline-dark"
+           href="{{ url_for('main.export_customer_orders_csv', customer_id=customer.id) }}">
+          Export CSV
+        </a>
+      {% endif %}
+    </div>
 
-  {% if period_revenue is not none %}
-    <p><b>Umsatz im Zeitraum:</b> {{ "%.2f"|format(period_revenue) }} €</p>
-  {% endif %}
-</section>
+    <div class="table-responsive mt-3">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Datum</th>
+            <th>Status</th>
+            <th class="text-end">Summe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in last_orders %}
+            <tr>
+              <td>{{ o.id }}</td>
+              <td>{{ o.order_date.strftime("%Y-%m-%d") }}</td>
+              <td>
+                <span class="badge
+                  {% if o.status == 'Bezahlt' %} text-bg-success
+                  {% elif o.status == 'Offen' %} text-bg-warning
+                  {% else %} text-bg-secondary {% endif %}">
+                  {{ o.status }}
+                </span>
+              </td>
+              <td class="text-end">{{ "%.2f"|format(o.total_amount) }} €</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="text-muted">Keine Bestellungen vorhanden.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-<section class="card">
-  <h3>Letzte Bestellungen</h3>
-  <table>
-    <thead><tr><th>#</th><th>Datum</th><th>Status</th><th>Summe</th></tr></thead>
-    <tbody>
-    {% for o in last_orders %}
-      <tr>
-        <td>{{ o.id }}</td>
-        <td>{{ o.order_date.strftime("%Y-%m-%d") }}</td>
-        <td>{{ o.status }}</td>
-        <td>{{ "%.2f"|format(o.total_amount) }} €</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</section>
+<!-- Letzte Kontakte + Kontakt anlegen -->
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Letzte Kontakte</h5>
 
-<section class="card">
-  <h3>Letzte Kontakte</h3>
+    <form method="post" action="{{ url_for('main.add_contact', customer_id=customer.id) }}" class="row g-2 align-items-end">
+      <div class="col-12 col-md-3">
+        <label class="form-label small mb-1">Art</label>
+        <select class="form-select form-select-sm" name="channel" required>
+          {% for ch in channels %}
+            <option value="{{ ch }}">{{ ch }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-  <form method="post" action="{{ url_for('main.add_contact', customer_id=customer.id) }}" class="row wrap">
-    <select name="channel" required>
-      {% for ch in channels %}
-        <option value="{{ ch }}">{{ ch }}</option>
+      <div class="col-12 col-md-3">
+        <label class="form-label small mb-1">Betreff</label>
+        <input class="form-control form-control-sm" name="subject" placeholder="optional">
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label small mb-1">Notizen</label>
+        <input class="form-control form-control-sm" name="notes" placeholder="optional">
+      </div>
+
+      <div class="col-12 col-md-2 d-grid">
+        <button class="btn btn-sm btn-dark" type="submit">Speichern</button>
+      </div>
+    </form>
+
+    <hr class="my-3">
+
+    <ul class="list-group list-group-flush">
+      {% for ct in last_contacts %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between flex-wrap gap-2">
+            <div>
+              <span class="badge text-bg-light border">{{ ct.channel }}</span>
+              <span class="ms-2">{{ ct.subject or "" }}</span>
+              {% if ct.notes %}
+                <div class="text-muted small mt-1">{{ ct.notes }}</div>
+              {% endif %}
+            </div>
+            <div class="text-muted small text-end">
+              {{ ct.contact_time.strftime("%Y-%m-%d %H:%M") }}
+              {% if ct.user %}<div>Erfasser: {{ ct.user.name }}</div>{% endif %}
+            </div>
+          </div>
+        </li>
+      {% else %}
+        <li class="list-group-item text-muted">Keine Kontakte vorhanden.</li>
       {% endfor %}
-    </select>
-    <input name="subject" placeholder="Betreff (optional)">
-    <input name="notes" placeholder="Notizen (optional)">
-    <button type="submit">Kontakt speichern</button>
-  </form>
+    </ul>
 
-  <ul class="timeline">
-    {% for ct in last_contacts %}
-      <li>
-        <b>{{ ct.contact_time.strftime("%Y-%m-%d %H:%M") }}</b>
-        – <b>{{ ct.channel }}</b>: {{ ct.subject or "" }}
-        <span class="muted">(Erfasser: {{ ct.user.name if ct.user else "" }})</span>
-      </li>
-    {% endfor %}
-  </ul>
-
-  {% if current_user.role == "CHEF" %}
-    <a class="btn" href="{{ url_for('main.export_customer_orders_csv', customer_id=customer.id) }}">CSV Export (Chef)</a>
-  {% endif %}
-</section>
+  </div>
+</div>
 
 {% endblock %}
