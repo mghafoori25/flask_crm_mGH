@@ -286,4 +286,4 @@ def import_customers():
         db.session.commit()
         flash("Import abgeschlossen.", "success")
 
-    return render_template("import_customers.html", result=result)
+    return render_template("import.html", result=result)
