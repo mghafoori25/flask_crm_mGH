@@ -10,6 +10,12 @@ login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 
 def create_app(config_class=Config):
+    """
+    Application factory.
+    
+    Creates and configures the Flask application instance,
+    initializes extensions, registers blueprints and error handlers.
+    """
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     app = Flask(
@@ -26,6 +32,11 @@ def create_app(config_class=Config):
 
     @login_manager.user_loader
     def load_user(user_id):
+        """
+        Flask-Login user loader.
+        
+        Loads a user instance by its ID for session handling.
+        """
         return User.query.get(int(user_id))
 
     from app.auth import auth

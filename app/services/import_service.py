@@ -1,5 +1,6 @@
 """
-CSV import services for customers.
+Customer CSV import service.
+Contains business logic for validated import processing.
 """
 
 from __future__ import annotations
@@ -33,12 +34,11 @@ def _detect_delimiter(text: str) -> str:
 
 def import_customers_csv(file_bytes: bytes, update_existing: bool) -> ImportResult:
     """
-    Import customers from CSV bytes.
-
-    Required headers: name,email
-    Optional: phone
-
-    If update_existing=True, update existing customers (match by email).
+    Processes a CSV file and creates or updates customers.
+    
+    :param file_bytes: Raw uploaded CSV file content
+    :param update_existing: If True, existing customers are updated
+    :return: ImportResult containing statistics
     """
     result = ImportResult()
 
