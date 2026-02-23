@@ -1,9 +1,17 @@
+"""
+Database models for the CRM application.
+Defines User, Customer, Order and Contact entities.
+"""
+
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
 class User(UserMixin, db.Model):
+    """
+    Represents an authenticated system user with a specific role.
+    """
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -18,6 +26,10 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
 class Customer(db.Model):
+    """
+    Represents a customer in the CRM system.
+    Stores personal data and relationships to orders and contacts.
+    """
     __tablename__ = "customers"
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(100), nullable=False)
@@ -30,9 +42,18 @@ class Customer(db.Model):
     contacts = db.relationship("Contact", backref="customer", lazy=True, cascade="all, delete-orphan")
 
     def full_name(self):
+        
+        """
+        Returns the full name of the customer.
+        """
+        
         return f"{self.first_name} {self.last_name}"
 
 class Order(db.Model):
+    """
+    Represents a customer order.
+    Stores order date, status and total amount.
+    """
     __tablename__ = "orders"
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
@@ -41,6 +62,9 @@ class Order(db.Model):
     total_amount = db.Column(db.Numeric(10, 2), nullable=False)
 
 class Contact(db.Model):
+    """
+    Represents a communication entry between a user and a customer.
+    """
     __tablename__ = "contacts"
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)

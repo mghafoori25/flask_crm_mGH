@@ -1,3 +1,10 @@
+"""
+Management script for the CRM application.
+
+Provides command-line interface commands for running the
+development server, database migrations and seeding.
+"""
+
 import random
 from datetime import datetime, timedelta
 from app import create_app, db
@@ -14,6 +21,10 @@ def init_db():
         print("DB init OK")
 
 def seed():
+    """
+    Seeds the database with example data
+    (customers, orders, contacts).
+    """
     with app.app_context():
         db.drop_all()
         db.create_all()
