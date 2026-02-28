@@ -1,16 +1,18 @@
 @startuml
+' Layout und Farben
 left to right direction
 skinparam linetype ortho
 skinparam nodesep 20
-skinparam ranksep 40
+skinparam ranksep 50
 skinparam dpi 150
 
 ' Linien / Pfeile schwarz
 skinparam ArrowColor Black
 skinparam ArrowThickness 1
 skinparam BorderColor Black
+skinparam ArrowFontSize 10
 
-' Hellblaues Farbschema für Packages, Use-Cases weiß lassen
+' Hellblaues Farbschema für Packages, Use-Cases weiß
 skinparam packageBackgroundColor #DCEEFF
 skinparam packageBorderColor #A6C8E8
 skinparam usecaseBackgroundColor White
@@ -18,84 +20,145 @@ skinparam usecaseBorderColor #A6C8E8
 skinparam actorBorderColor Black
 skinparam actorBackgroundColor White
 
-' Akteure (Aliase)
+' Notizen (Tags) hellrosa
+skinparam noteBackgroundColor #FADADD
+skinparam noteBorderColor #E8AEB6
+skinparam noteFontSize 11
+
+' Akteure (Basis + Spezialisierungen)
 actor User as A_User
 actor EMPLOYEE as A_Employee
 actor CHEF as A_Chef
 
-' Spezialisierungen
 A_User <|-- A_Employee
 A_User <|-- A_Chef
 
-' Systemgrenze als Package
-package "CRM System" {
-  package "Authentifizierung" {
-    usecase "Authentifizieren" as UC_Authentifizieren
-    usecase "Login" as UC_Login
-    usecase "Logout" as UC_Logout
-  }
+' Systemgrenze als Rechteck
+rectangle "CRM System" {
+  ' Top-Level Use Cases
+  usecase "Authentifizieren" as UC_Authentifizieren
+  usecase "Startoberfläche nutzen" as UC_Start
+  usecase "Kunden-Detail nutzen" as UC_KundenDetail
+  usecase "CSV verwalten" as UC_CSVVerwalten
 
-  package "Start / Dashboard" {
-    usecase "Startoberfläche nutzen" as UC_Start
-    usecase "Letzte Bestellungen anzeigen" as UC_LetzteBestellungen
-    usecase "Letzte Kontakte anzeigen" as UC_LetzteKontakte
-  }
+  ' Inkludierte Use Cases
+  usecase "Login" as UC_Login
+  usecase "Logout" as UC_Logout
 
-  package "Kundenverwaltung" {
-    usecase "Kunden suchen" as UC_KundenSuchen
-    usecase "Kunden-Detail nutzen" as UC_KundenDetail
-    usecase "Kontakt erfassen" as UC_KontaktErfassen
-  }
+  usecase "Bestellungen anzeigen\n(global, chronologisch absteigend)" as UC_BestellungenAnzeigen
+  usecase "Kontakte anzeigen\n(global, chronologisch absteigend)" as UC_KontakteAnzeigen
 
-  package "Bestellungen" {
-    usecase "Bestellungen anzeigen" as UC_BestellungenAnzeigen
-    usecase "Bestellungen suchen" as UC_BestellungenSuchen
-  }
+  usecase "Umsatz anzeigen" as UC_UmsatzAnzeigen
+  usecase "Letzte Bestellungen anzeigen" as UC_LetzteBestellungen
+  usecase "Letzte Kontakte anzeigen" as UC_LetzteKontakte
+  usecase "Kontakt erfassen" as UC_KontaktErfassen
 
-  package "Kontakte" {
-    usecase "Kontakte anzeigen" as UC_KontakteAnzeigen
-    usecase "Kontakte filtern" as UC_KontakteFiltern
-  }
+  usecase "Umsatz gesamt anzeigen" as UC_UmsatzGesamt
+  usecase "Umsatz letztes Jahr anzeigen" as UC_UmsatzLetztesJahr
 
-  package "Umsatz" {
-    usecase "Umsatz anzeigen" as UC_UmsatzAnzeigen
-    usecase "Umsatz gesamt anzeigen" as UC_UmsatzGesamt
-    usecase "Umsatz letztes Jahr anzeigen" as UC_UmsatzLetztesJahr
-    usecase "Umsatz nach Datumsbereich filtern" as UC_UmsatzFilter
-  }
+  usecase "CSV Import Kunden" as UC_CSVImportKunden
+  usecase "CSV Export Bestellungen eines Kunden" as UC_CSVExportBestellungen
 
-  package "CSV" {
-    usecase "CSV verwalten" as UC_CSVVerwalten
-    usecase "CSV Export" as UC_CSVExport
-    usecase "CSV Import" as UC_CSVImport
-  }
+  ' Erweiterungen (optionale Use Cases)
+  usecase "Kunden suchen" as UC_KundenSuchen
+  usecase "Bestellungen suchen" as UC_BestellungenSuchen
+  usecase "Kontakte filtern nach Art" as UC_KontakteFilternArt
+  usecase "Umsatz nach Datumsbereich filtern" as UC_UmsatzFilterDatum
 }
 
-' Akteur -> Use Cases
+' Top-Level Assoziationen (direkt erreichbar)
 A_User --> UC_Authentifizieren
 A_User --> UC_Start
 A_User --> UC_KundenDetail
 
 A_Chef --> UC_CSVVerwalten
 
-' Use-Case Beziehungen (include)
-UC_Authentifizieren ..> UC_Login : <<include>>
-UC_Authentifizieren ..> UC_Logout : <<include>>
+' Include-Beziehungen (Basis ..> Inkludiert) mit hellrosa "note on link"
+UC_Authentifizieren ..> UC_Login
+note on link #FADADD
+  <<include>>
+end note
 
-UC_Start ..> UC_LetzteBestellungen : <<include>>
-UC_Start ..> UC_LetzteKontakte : <<include>>
+UC_Authentifizieren ..> UC_Logout
+note on link #FADADD
+  <<include>>
+end note
 
-UC_KundenSuchen ..> UC_KundenDetail : <<include>>
-UC_KundenDetail ..> UC_KontaktErfassen : <<include>>
+UC_Start ..> UC_BestellungenAnzeigen
+note on link #FADADD
+  <<include>>
+end note
 
-UC_BestellungenAnzeigen ..> UC_BestellungenSuchen : <<include>>
-UC_KontakteAnzeigen ..> UC_KontakteFiltern : <<include>>
+UC_Start ..> UC_KontakteAnzeigen
+note on link #FADADD
+  <<include>>
+end note
 
-UC_CSVVerwalten ..> UC_CSVExport : <<include>>
-UC_CSVVerwalten ..> UC_CSVImport : <<include>>
+UC_KundenDetail ..> UC_UmsatzAnzeigen
+note on link #FADADD
+  <<include>>
+end note
 
-UC_UmsatzAnzeigen ..> UC_UmsatzGesamt : <<include>>
-UC_UmsatzAnzeigen ..> UC_UmsatzLetztesJahr : <<include>>
-UC_UmsatzAnzeigen ..> UC_UmsatzFilter : <<include>>
+UC_KundenDetail ..> UC_LetzteBestellungen
+note on link #FADADD
+  <<include>>
+end note
+
+UC_KundenDetail ..> UC_LetzteKontakte
+note on link #FADADD
+  <<include>>
+end note
+
+UC_KundenDetail ..> UC_KontaktErfassen
+note on link #FADADD
+  <<include>>
+end note
+
+UC_UmsatzAnzeigen ..> UC_UmsatzGesamt
+note on link #FADADD
+  <<include>>
+end note
+
+UC_UmsatzAnzeigen ..> UC_UmsatzLetztesJahr
+note on link #FADADD
+  <<include>>
+end note
+
+UC_CSVVerwalten ..> UC_CSVImportKunden
+note on link #FADADD
+  <<include>>
+end note
+
+UC_CSVVerwalten ..> UC_CSVExportBestellungen
+note on link #FADADD
+  <<include>>
+end note
+
+' Extend-Beziehungen (Optionaler Use Case ..> Basis) mit hellrosa "note on link"
+UC_KundenSuchen ..> UC_Start
+note on link #FADADD
+  <<extend>>
+end note
+
+UC_BestellungenSuchen ..> UC_BestellungenAnzeigen
+note on link #FADADD
+  <<extend>>
+end note
+
+UC_KontakteFilternArt ..> UC_KontakteAnzeigen
+note on link #FADADD
+  <<extend>>
+end note
+
+UC_UmsatzFilterDatum ..> UC_UmsatzAnzeigen
+note on link #FADADD
+  <<extend>>
+end note
+
+' Layout-Hilfe: versteckte Kanten zur besseren Gruppierung (verringert Kreuzungen)
+UC_KundenDetail -[hidden]- UC_Start
+UC_BestellungenAnzeigen -[hidden]- UC_BestellungenSuchen
+UC_KontakteAnzeigen -[hidden]- UC_KontakteFilternArt
+UC_UmsatzAnzeigen -[hidden]- UC_UmsatzFilterDatum
 
 @enduml

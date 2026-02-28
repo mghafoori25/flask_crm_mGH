@@ -1,0 +1,69 @@
+@startuml
+title Sequenzdiagramm: CSV-Import (Erweiterung)
+
+actor User
+participant Browser
+participant "Flask Controller\n(/import)" as Controller
+participant "CSV Service" as Service
+participant "Customer Model" as Model
+database DB
+
+User -> Browser : CSV auswählen + Import starten
+Browser -> Controller : HTTP POST /import
+
+activate Controller
+Controller -> Controller : pruefe_rolle()
+Controller --> Controller : rolle
+
+alt Rolle = Chef
+
+  Controller -> Service : validate_file(file)
+  activate Service
+
+  alt Datei ungültig
+    Service --> Controller : Fehler (z.B. Typ/Größe)
+    deactivate Service
+    Controller --> Browser : HTTP 400 + Fehlermeldung
+    deactivate Controller
+
+  else Datei gültig
+    Service --> Controller : OK
+    deactivate Service
+
+    Controller -> Service : parse_csv(file)
+    activate Service
+
+    loop Für jede CSV-Zeile
+      Service -> Model : validate_and_prepare(data)
+      activate Model
+      Model --> Service : Validiertes Objekt
+      deactivate Model
+    end
+
+    Service -> Model : bulk_insert(customers)
+    activate Model
+    Model -> DB : INSERT (bulk)
+    activate DB
+    DB --> Model : OK
+    deactivate DB
+    Model --> Service : OK
+    deactivate Model
+
+    Service --> Controller : Import erfolgreich (+ Anzahl)
+    deactivate Service
+
+    Controller --> Browser : HTTP 302 Redirect (z.B. /customers)
+    deactivate Controller
+
+    Browser -> Controller : HTTP GET /customers
+    activate Controller
+    Controller --> Browser : HTML (Kundenliste + Flash Erfolgsnachricht)
+    deactivate Controller
+  end
+
+else Rolle ≠ Chef
+  Controller --> Browser : HTTP 403 Forbidden
+  deactivate Controller
+end
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml
+title ERD (Crow's Foot): CRM-Datenbankstruktur
+
+hide circle
+skinparam linetype ortho
+skinparam dpi 160
+skinparam shadowing false
+
+entity "Customer" as Customer {
+  * id : INT <<PK>>
+  --
+  name : VARCHAR(255)
+  email : VARCHAR(255) <<UNIQUE>>
+  company : VARCHAR(255)
+  phone : VARCHAR(50)
+  status : VARCHAR(50)
+}
+
+entity "Lead" as Lead {
+  * id : INT <<PK>>
+  --
+  name : VARCHAR(255)
+  email : VARCHAR(255)
+  company : VARCHAR(255)
+  value : DECIMAL(10,2)
+  source : VARCHAR(100)
+  status : VARCHAR(50)
+}
+
+entity "User" as User {
+  * id : INT <<PK>>
+  --
+  username : VARCHAR(150) <<UNIQUE>>
+  password_hash : VARCHAR(255)
+  role : VARCHAR(20)  ' chef | employee
+  created_at : DATETIME
+}
+
+entity "Contact" as Contact {
+  * id : INT <<PK>>
+  --
+  customer_id : INT <<FK>>
+  user_id : INT <<FK>>
+  contact_type : VARCHAR(50)
+  notes : TEXT
+  date : DATETIME
+}
+
+' Beziehungen (Crow's Foot)
+Customer ||--o{ Contact : has
+User ||--o{ Contact : creates
+
+' FK-Hinweise (optional, macht es für Prüfer klarer)
+Contact }o--|| Customer : FK customer_id
+Contact }o--|| User : FK user_id
+
+@enduml
