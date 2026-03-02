@@ -239,5 +239,5 @@ def import_customers():
             flash("Import fehlgeschlagen (Serverfehler).", "danger")
             raise
 
-    # Du nutzt templates/import.html
+    
     return render_template("import.html", result=result)
