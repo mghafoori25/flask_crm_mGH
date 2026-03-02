@@ -1,0 +1,44 @@
+@startuml
+title Aktivitätsdiagramm: Kontakt erfassen
+
+skinparam dpi 160
+skinparam shadowing false
+
+|User|
+start
+:Öffne Kundendetailansicht;
+:Klicke "Kontakt erfassen";
+
+|CRM-System|
+:Zeige Kontaktformular;
+
+|User|
+:Fülle Formular aus\n(Kanal Pflichtfeld,\nBetreff/Notizen optional);
+:Sende Formular;
+
+|CRM-System|
+:Validiere Eingaben;
+
+if (Eingaben gültig?) then (ja)
+
+  :Erzeuge Kontaktobjekt\n(customer_id, user_id,\n timestamp, kanal,\n betreff?, notizen?);
+  :Speichere Kontakt;
+
+  |Datenbank|
+  :Führe INSERT aus;
+  :Bestätige Speicherung;
+
+  |CRM-System|
+  :Zeige Erfolgsnachricht\n(Flash Message);
+  :Leite zur Kundendetailansicht weiter;
+  stop
+
+else (nein)
+
+  :Zeige Fehlermeldung\n(Flash Message);
+  :Zeige Kontaktformular;
+  -> :Fülle Formular aus\n(Kanal Pflichtfeld,\nBetreff/Notizen optional);
+
+endif
+
+@enduml

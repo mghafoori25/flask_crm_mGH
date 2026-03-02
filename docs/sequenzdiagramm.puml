@@ -1,0 +1,47 @@
+@startuml
+title Sequenzdiagramm: Kunde anlegen (CRUD)
+
+actor User
+participant Browser
+participant "Flask Controller\n(Route)" as Controller
+participant "Customer Model" as Model
+database DB
+participant "HTML Template" as Template
+
+User -> Browser : Formular absenden
+Browser -> Controller : HTTP POST /customers
+
+activate Controller
+Controller -> Controller : Validierung der Eingaben
+
+alt Eingaben gültig
+
+    Controller -> Model : create_customer(data)
+    activate Model
+
+    Model -> DB : INSERT Customer
+    activate DB
+    DB --> Model : OK
+    deactivate DB
+
+    Model --> Controller : Customer Objekt
+    deactivate Model
+
+    Controller -> Template : render_template(success)
+    activate Template
+    Template --> Controller : HTML
+    deactivate Template
+
+    Controller --> Browser : HTTP 302 Redirect
+    deactivate Controller
+
+else Eingaben ungültig
+
+    Controller -> Template : render_template(error)
+    Template --> Controller : HTML
+    Controller --> Browser : HTTP 400 Response
+    deactivate Controller
+
+end
+
+@enduml

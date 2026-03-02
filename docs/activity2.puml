@@ -1,0 +1,61 @@
+@startuml
+title Aktivitätsdiagramm: CSV-Import (Kunden)
+
+skinparam dpi 160
+skinparam shadowing false
+
+|User|
+start
+:Öffnet Import-Seite;
+:Wählt CSV-Datei aus;
+:Klickt "Import starten";
+
+|CRM-System|
+:Empfängt Datei-Upload;
+:Prüfe Dateityp und Größe;
+
+if (Datei gültig?) then ([ja])
+
+  :Lese CSV-Datei ein;
+  :Prüfe Header/Spaltenstruktur;
+
+  if (Header korrekt?) then ([ja])
+
+    :Parse Zeilen;
+    :Validiere Datensätze\n(Pflichtfelder, Email-Format,\nDuplikate, Wertebereiche);
+
+    if (Alle Datensätze gültig?) then ([ja])
+
+      :Starte Transaktion;
+
+      |Datenbank|
+      :Bulk INSERT/UPDATE Kunden;
+
+      |CRM-System|
+      :Commit Transaktion;
+      :Zeige Erfolgsnachricht\n(Anzahl importiert);
+      :Leite zur Kundenliste weiter;
+      stop
+
+    else ([nein])
+
+      :Erstelle Fehlerreport\n(Zeile + Fehlergrund);
+      :Zeige Fehlermeldung\n(Flash Message);
+      :Biete Download Fehlerreport an;
+      stop
+
+    endif
+
+  else ([nein])
+    :Zeige Fehlermeldung\n("Falsche Spalten/Headers");
+    :Zeige Import-Seite erneut;
+    stop
+  endif
+
+else ([nein])
+  :Zeige Fehlermeldung\n("Ungültige Datei: nur .csv erlaubt");
+  :Zeige Import-Seite erneut;
+  stop
+endif
+
+@enduml
