@@ -47,3 +47,29 @@ class ContactSchema(Schema):
     subject = fields.Str(allow_none=True, validate=validate.Length(max=255))
     notes = fields.Str(allow_none=True)
     contact_time = fields.DateTime(dump_only=True)
+    
+class ContactCreateSchema(Schema):
+    """
+    Input schema for creating/updating a contact (POST/PUT).
+    user_id and contact_time are set server-side.
+    """
+    customer_id = fields.Int(required=True)
+    channel = fields.Str(
+        required=True,
+        validate=validate.OneOf(["Telefon", "E-Mail", "Meeting", "Chat"])
+    )
+    subject = fields.Str(allow_none=True, validate=validate.Length(max=255))
+    notes = fields.Str(allow_none=True)
+
+
+class ContactUpdateSchema(Schema):
+    """
+    Input schema for partial updates (PATCH).
+    All fields are optional.
+    """
+    customer_id = fields.Int()
+    channel = fields.Str(
+        validate=validate.OneOf(["Telefon", "E-Mail", "Meeting", "Chat"])
+    )
+    subject = fields.Str(allow_none=True, validate=validate.Length(max=255))
+    notes = fields.Str(allow_none=True)
