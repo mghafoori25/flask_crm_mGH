@@ -1,3 +1,8 @@
+"""
+Main application routes (dashboard, customer detail, import/export).
+Implements controller logic of the CRM.
+"""
+
 import csv
 from io import StringIO
 from datetime import datetime, date
@@ -23,7 +28,12 @@ STATUSES = ["Offen", "Bezahlt", "Storniert"]
 @main.route("/")
 @login_required
 def index():
-    """Dashboard: Kunden-Suche, globale Bestellungen (chronologisch), globale Kontakte (Filter)."""
+    """
+    Dashboard view.
+    
+    Displays customer search, global orders (chronological)
+    and contact overview with optional filtering.
+    """
     # --- Customers search
     q = request.args.get("q", "").strip()
     customers_page = int(request.args.get("customers_page", 1))
@@ -93,7 +103,12 @@ def index():
 @main.route("/customers/<int:customer_id>")
 @login_required
 def customer_detail(customer_id: int):
-    """Customer Detail: KPI Umsatz gesamt/letztes Jahr + Datumsfilter + letzte Bestellungen/Kontakte."""
+    """
+    Customer detail view.
+    
+    Displays revenue KPIs, date range filtering,
+    latest orders and latest contacts.
+    """
     customer = Customer.query.get_or_404(customer_id)
 
     # KPI: Umsatz gesamt
@@ -148,7 +163,10 @@ def customer_detail(customer_id: int):
 @main.route("/customers/<int:customer_id>/contacts/new", methods=["POST"])
 @login_required
 def add_contact(customer_id: int):
-    """Add a new contact entry for the given customer (server-side validated)."""
+    """
+    Creates a new contact entry for a customer.
+    Validates input and stores the contact in the database.
+    """
     customer = Customer.query.get_or_404(customer_id)
 
     channel = request.form.get("channel", "").strip()
@@ -174,26 +192,83 @@ def add_contact(customer_id: int):
     return redirect(url_for("main.customer_detail", customer_id=customer.id))
 
 
-@main.route("/customers/<int:customer_id>/orders.csv")
+@main.route("/export/customers.csv")
 @login_required
-@role_required("CHEF")
-def export_customer_orders_csv(customer_id: int):
-    """Chef-only: Export orders of one customer as CSV."""
-    customer = Customer.query.get_or_404(customer_id)
-    orders = Order.query.filter_by(customer_id=customer.id).order_by(Order.order_date.desc()).all()
+def export_customers_csv():
+    """
+    Exportiert Kundendaten als Excel-taugliche CSV-Datei (Semikolon, UTF-8-SIG, klare Header).
+    Nur für Rolle CHEF.
+    """
+    if current_user.role != "CHEF":
+        flash("Keine Berechtigung für den Export.", "danger")
+        return redirect(url_for("main.index"))
 
-    output = StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["order_id", "order_date", "status", "total_amount"])
+    customers = Customer.query.order_by(Customer.id.asc()).all()
 
-    for o in orders:
-        writer.writerow([o.id, o.order_date.strftime("%Y-%m-%d"), o.status, f"{float(o.total_amount):.2f}"])
+    # StringIO + newline="" verhindert doppelte Leerzeilen auf Windows
+    output = io.StringIO(newline="")
+    writer = csv.writer(
+        output,
+        delimiter=";",
+        quotechar='"',
+        quoting=csv.QUOTE_MINIMAL,
+        lineterminator="\r\n",
+    )
 
-    output.seek(0)
+    # Fixe, schöne Spaltenreihenfolge
+    headers = [
+        "ID",
+        "Vorname",
+        "Nachname",
+        "E-Mail",
+        "Firma",
+        "Telefon",
+        "Status",
+        "Erstellt am",
+    ]
+    writer.writerow(headers)
+
+    def safe(value) -> str:
+        """Konvertiert None sauber zu leerem String und trimmt Strings."""
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value.strip()
+        return str(value)
+
+    for c in customers:
+        status_value = getattr(c, "status", "")
+        # Falls status bool/int ist, hübsch machen:
+        if isinstance(status_value, bool):
+            status_value = "AKTIV" if status_value else "INAKTIV"
+        elif str(status_value).isdigit():
+            status_value = "AKTIV" if str(status_value) == "1" else "INAKTIV"
+
+        created_at = getattr(c, "created_at", None)
+        created_at_str = created_at.strftime("%Y-%m-%d %H:%M") if created_at else ""
+
+        writer.writerow([
+            safe(getattr(c, "id", "")),
+            safe(getattr(c, "first_name", "")),
+            safe(getattr(c, "last_name", "")),
+            safe(getattr(c, "email", "")),
+            safe(getattr(c, "company", "")),
+            safe(getattr(c, "phone", "")),
+            safe(status_value),
+            created_at_str,
+        ])
+
+    csv_text = output.getvalue()
+
+    # Excel-Fix: UTF-8 BOM (damit Umlaute und Trennung sauber erkannt werden)
+    csv_bytes = csv_text.encode("utf-8-sig")
+
     return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=customer_{customer.id}_orders.csv"},
+        csv_bytes,
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": "attachment; filename=customers_export.csv"
+        },
     )
 
 
@@ -201,7 +276,10 @@ def export_customer_orders_csv(customer_id: int):
 @login_required
 @role_required("CHEF")
 def monthly_dashboard():
-    """Chef-only: Monthly revenue overview (SQLite grouping)."""
+    """
+    Generates monthly revenue aggregation.
+    Accessible only for CHEF role.
+    """
     rows = (
         db.session.query(
             func.strftime("%Y-%m", Order.order_date).label("month"),
@@ -218,7 +296,10 @@ def monthly_dashboard():
 @login_required
 @role_required("CHEF")
 def import_customers():
-    """Chef-only: Import customers from CSV (validated, service-based)."""
+    """
+    Imports customers from a CSV file.
+    Performs validation and optional update of existing records.
+    """
     result = None
 
     if request.method == "POST":
@@ -239,5 +320,4 @@ def import_customers():
             flash("Import fehlgeschlagen (Serverfehler).", "danger")
             raise
 
-    # Du nutzt templates/import.html
     return render_template("import.html", result=result)
