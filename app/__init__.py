@@ -37,4 +37,7 @@ def create_app(config_class=Config):
     from app.errors import register_error_handlers
     register_error_handlers(app)
     
+    from app.api import init_api
+    init_api(app)
+    
     return app
