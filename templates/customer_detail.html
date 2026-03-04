@@ -81,12 +81,12 @@
     <div class="d-flex align-items-center justify-content-between">
       <h5 class="card-title mb-0">Letzte Bestellungen</h5>
 
-      {% if current_user.role == "CHEF" %}
+     {# {% if current_user.role == "CHEF" %}
         <a class="btn btn-sm btn-outline-dark"
-           href="{{ url_for('main.export_customer_orders_csv', customer_id=customer.id) }}">
+           href="{{ url_for('main.export_customer_orders_csv', customer_id=customer.id) }}"> 
           Export CSV
-        </a>
-      {% endif %}
+        </a> 
+      {% endif %} #}
     </div>
 
     <div class="table-responsive mt-3">
