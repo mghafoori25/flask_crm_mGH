@@ -12,7 +12,7 @@ from app.api.schemas import ContactSchema, PaginationQuerySchema
 from app.api.resources import require_login
 from flask_login import current_user
 
-blp = Blueprint("contacts", "contacts", url_prefix="/api/contacts", description="Contacts")
+blp = Blueprint("contacts", __name__, url_prefix="/contacts", description="Contacts")
 
 
 @blp.route("/")

@@ -1,7 +1,5 @@
-"""
-Customer API endpoints (CRUD + search + pagination).
-"""
 from flask.views import MethodView
+from flask import request
 from flask_smorest import Blueprint, abort
 from sqlalchemy import or_
 
@@ -10,7 +8,7 @@ from app.models import Customer
 from app.api.schemas import CustomerSchema, CustomerUpdateSchema, PaginationQuerySchema
 from app.api.resources import require_login, require_role
 
-blp = Blueprint("customers", "customers", url_prefix="/api/customers", description="Customers")
+blp = Blueprint("customers", __name__, url_prefix="/customers", description="Customers")
 
 
 @blp.route("/")
@@ -22,7 +20,7 @@ class CustomersCollection(MethodView):
         """List customers (optional search via ?q=...)."""
         require_login()
 
-        q = (blp.request.args.get("q") or "").strip()
+        q = (request.args.get("q") or "").strip()
         query = Customer.query
         if q:
             like = f"%{q}%"
@@ -43,9 +41,8 @@ class CustomersCollection(MethodView):
     @blp.response(201, CustomerSchema)
     def post(self, data):
         """Create a new customer."""
-        require_role("CHEF")  # professionell: nur Chef darf anlegen (wenn du willst)
+        require_role("CHEF")
 
-        # Email uniqueness check (optional, aber professionell)
         existing = Customer.query.filter_by(email=data["email"].lower()).first()
         if existing:
             abort(409, description="Customer with this email already exists")
@@ -66,7 +63,6 @@ class CustomerItem(MethodView):
 
     @blp.response(200, CustomerSchema)
     def get(self, customer_id):
-        """Get single customer."""
         require_login()
         c = Customer.query.get_or_404(customer_id)
         return c
@@ -74,7 +70,6 @@ class CustomerItem(MethodView):
     @blp.arguments(CustomerUpdateSchema)
     @blp.response(200, CustomerSchema)
     def put(self, data, customer_id):
-        """Full update (PUT) of a customer."""
         require_role("CHEF")
         c = Customer.query.get_or_404(customer_id)
 
@@ -87,13 +82,12 @@ class CustomerItem(MethodView):
     @blp.arguments(CustomerUpdateSchema)
     @blp.response(200, CustomerSchema)
     def patch(self, data, customer_id):
-        """Partial update (PATCH) of a customer."""
         return self.put(data, customer_id)
 
+    @blp.response(200)
     def delete(self, customer_id):
-        """Delete a customer."""
         require_role("CHEF")
         c = Customer.query.get_or_404(customer_id)
         db.session.delete(c)
         db.session.commit()
-        return {"status": "deleted"}, 200
+        return {"status": "deleted", "id": customer_id}
