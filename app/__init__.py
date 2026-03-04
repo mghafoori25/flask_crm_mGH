@@ -41,3 +41,5 @@ def create_app(config_class=Config):
     init_api(app)
     
     return app
+
+print("### DEPLOY CHECK: new code loaded ###")
