@@ -11,7 +11,7 @@ from app.api.schemas import OrderSchema, OrderUpdateSchema, PaginationQuerySchem
 from app.api.resources import require_login, require_role
 from flask import request
 
-blp = Blueprint("orders", __name__, url_prefix="/orders", description="Orders")
+blp = Blueprint("orders", __name__, url_prefix="/api/orders", description="Orders")
 
 
 @blp.route("/")

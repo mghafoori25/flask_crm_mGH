@@ -24,8 +24,8 @@ def init_api(app):
     from app.api.resources.orders import blp as orders_blp
     from app.api.resources.contacts import blp as contacts_blp
 
-    api.register_blueprint(customers_blp, url_prefix="/api")
-    api.register_blueprint(orders_blp, url_prefix="/api")
-    api.register_blueprint(contacts_blp, url_prefix="/api")
+    api.register_blueprint(customers_blp)
+    api.register_blueprint(orders_blp)
+    api.register_blueprint(contacts_blp)
 
     return api

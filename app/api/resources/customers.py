@@ -8,7 +8,7 @@ from app.models import Customer
 from app.api.schemas import CustomerSchema, CustomerUpdateSchema, PaginationQuerySchema
 from app.api.resources import require_login, require_role
 
-blp = Blueprint("customers", __name__, url_prefix="/customers", description="Customers")
+blp = Blueprint("customers", __name__, url_prefix="/api/customers", description="Customers")
 
 
 @blp.route("/")
