@@ -53,4 +53,3 @@ def create_app(config_class=Config):
     
     return app
 
-print("### DEPLOY CHECK: new code loaded ###")
