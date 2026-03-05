@@ -30,7 +30,7 @@ STATUSES = ["Offen", "Bezahlt", "Storniert"]
 def index():
     """
     Dashboard view.
-    
+
     Displays customer search, global orders (chronological)
     and contact overview with optional filtering.
     """
@@ -105,7 +105,7 @@ def index():
 def customer_detail(customer_id: int):
     """
     Customer detail view.
-    
+
     Displays revenue KPIs, date range filtering,
     latest orders and latest contacts.
     """
@@ -205,8 +205,7 @@ def export_customers_csv():
 
     customers = Customer.query.order_by(Customer.id.asc()).all()
 
-    # StringIO + newline="" verhindert doppelte Leerzeilen auf Windows
-    output = io.StringIO(newline="")
+    output = StringIO(newline="")
     writer = csv.writer(
         output,
         delimiter=";",
@@ -215,7 +214,6 @@ def export_customers_csv():
         lineterminator="\r\n",
     )
 
-    # Fixe, schöne Spaltenreihenfolge
     headers = [
         "ID",
         "Vorname",
@@ -229,7 +227,6 @@ def export_customers_csv():
     writer.writerow(headers)
 
     def safe(value) -> str:
-        """Konvertiert None sauber zu leerem String und trimmt Strings."""
         if value is None:
             return ""
         if isinstance(value, str):
@@ -238,7 +235,6 @@ def export_customers_csv():
 
     for c in customers:
         status_value = getattr(c, "status", "")
-        # Falls status bool/int ist, hübsch machen:
         if isinstance(status_value, bool):
             status_value = "AKTIV" if status_value else "INAKTIV"
         elif str(status_value).isdigit():
@@ -247,28 +243,92 @@ def export_customers_csv():
         created_at = getattr(c, "created_at", None)
         created_at_str = created_at.strftime("%Y-%m-%d %H:%M") if created_at else ""
 
-        writer.writerow([
-            safe(getattr(c, "id", "")),
-            safe(getattr(c, "first_name", "")),
-            safe(getattr(c, "last_name", "")),
-            safe(getattr(c, "email", "")),
-            safe(getattr(c, "company", "")),
-            safe(getattr(c, "phone", "")),
-            safe(status_value),
-            created_at_str,
-        ])
+        writer.writerow(
+            [
+                safe(getattr(c, "id", "")),
+                safe(getattr(c, "first_name", "")),
+                safe(getattr(c, "last_name", "")),
+                safe(getattr(c, "email", "")),
+                safe(getattr(c, "company", "")),
+                safe(getattr(c, "phone", "")),
+                safe(status_value),
+                created_at_str,
+            ]
+        )
 
     csv_text = output.getvalue()
-
-    # Excel-Fix: UTF-8 BOM (damit Umlaute und Trennung sauber erkannt werden)
     csv_bytes = csv_text.encode("utf-8-sig")
 
     return Response(
         csv_bytes,
         mimetype="text/csv; charset=utf-8",
-        headers={
-            "Content-Disposition": "attachment; filename=customers_export.csv"
-        },
+        headers={"Content-Disposition": "attachment; filename=customers_export.csv"},
+    )
+
+
+@main.route("/customers/<int:customer_id>/export-orders.csv")
+@login_required
+def export_customer_orders_csv(customer_id: int):
+    """
+    Exportiert die Bestellungen eines einzelnen Kunden als CSV.
+    Nur für Rolle CHEF.
+
+    Hinweis: Das Template erwartet genau diesen Endpoint-Namen:
+    url_for('main.export_customer_orders_csv', customer_id=customer.id)
+    """
+    if current_user.role != "CHEF":
+        flash("Keine Berechtigung für den Export.", "danger")
+        return redirect(url_for("main.index"))
+
+    customer = Customer.query.get_or_404(customer_id)
+
+    orders = (
+        Order.query.filter_by(customer_id=customer.id)
+        .order_by(Order.order_date.desc())
+        .all()
+    )
+
+    output = StringIO(newline="")
+    writer = csv.writer(
+        output,
+        delimiter=";",
+        quotechar='"',
+        quoting=csv.QUOTE_MINIMAL,
+        lineterminator="\r\n",
+    )
+
+    writer.writerow(
+        [
+            "Bestell-ID",
+            "Kunde",
+            "Datum",
+            "Status",
+            "Gesamtbetrag",
+        ]
+    )
+
+    customer_name = f"{getattr(customer, 'first_name', '')} {getattr(customer, 'last_name', '')}".strip()
+
+    for o in orders:
+        order_date_str = o.order_date.strftime("%Y-%m-%d") if getattr(o, "order_date", None) else ""
+        writer.writerow(
+            [
+                getattr(o, "id", ""),
+                customer_name,
+                order_date_str,
+                getattr(o, "status", ""),
+                getattr(o, "total_amount", ""),
+            ]
+        )
+
+    csv_text = output.getvalue()
+    csv_bytes = csv_text.encode("utf-8-sig")
+
+    filename = f"customer_{customer.id}_orders.csv"
+    return Response(
+        csv_bytes,
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
