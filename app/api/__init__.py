@@ -19,6 +19,21 @@ def init_api(app):
         "OPENAPI_SWAGGER_UI_URL",
         "https://cdn.jsdelivr.net/npm/swagger-ui-dist/",
     )
+    
+    app.config.setdefault(
+    "API_SPEC_OPTIONS",
+    {
+        "components": {
+            "securitySchemes": {
+                "bearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
+                }
+            }
+        }
+    },
+)
 
     api = Api(app)
 
