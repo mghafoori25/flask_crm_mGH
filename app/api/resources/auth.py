@@ -8,7 +8,7 @@ from marshmallow import Schema, fields
 from app.models import User
 from app.api.jwt_utils import create_jwt
 
-blp = Blueprint("auth", __name__, url_prefix="/api/auth", description="Auth")
+blp = Blueprint("api_auth", __name__, url_prefix="/api/auth", description="API Auth")
 
 class TokenRequestSchema(Schema):
     """Request schema for obtaining a JWT token."""
