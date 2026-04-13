@@ -11,3 +11,6 @@ class Config:
     # UI Defaults
     PER_PAGE = 10
     TIMEZONE = os.environ.get("TIMEZONE", "Europe/Vienna")
+
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "change-me")
+JWT_EXPIRES_MINUTES = 60
